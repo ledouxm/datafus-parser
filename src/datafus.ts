@@ -2,6 +2,7 @@ import axios from "axios";
 import { promises as fs, createWriteStream } from "fs";
 import decompress from "decompress";
 import { getOrCreateFolder } from "./utils";
+import path from "path";
 
 export const initDatafusParser = async () => {
   const resp = await axios.get(
@@ -77,7 +78,8 @@ const cleanup = async (version: string) => {
   );
 };
 
-const getOrCreateOutputFolder = () => getOrCreateFolder("./output");
+export const getOutputFolder = () => path.join(__dirname, "output");
+const getOrCreateOutputFolder = () => getOrCreateFolder(getOutputFolder());
 
 const doesVersionFolderExists = async (version: string) => {
   const folder = await getOrCreateOutputFolder();

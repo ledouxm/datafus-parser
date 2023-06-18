@@ -1,17 +1,20 @@
 import { promises as fs, promises } from "fs";
-import { initDatafusParser } from "./datafus";
+import { getOutputFolder, initDatafusParser } from "./datafus";
 import { ICustomDataInput } from "./buffer/DataRW";
 import { BooleanByteWrapper } from "./buffer/BooleanByteWrapper";
 import { chunk } from "pastable";
+import path from "path";
 
 export const getLastVersionEvents = async (version?: string) => {
   if (ref.json && ref.properties) return ref;
 
   if (!version) version = await initDatafusParser();
 
-  const json = await import(`../output/${version}/data/A/events.json`);
+  const folder = path.join(getOutputFolder(), version, "/data/A/");
+
+  const json = JSON.parse(await fs.readFile(folder + "events.json", "utf-8"));
   const propertiesRaw = await fs.readFile(
-    `./output/${version}/data/A/events.properties`,
+    folder + "events.properties",
     "utf-8"
   );
   const properties = Object.fromEntries(
