@@ -78,7 +78,8 @@ const cleanup = async (version: string) => {
   );
 };
 
-export const getOutputFolder = () => path.join(__dirname, "output");
+export const getOutputFolder = () =>
+  path.join(__dirname, "node_modules", "datafus-parser", "output");
 const getOrCreateOutputFolder = () => getOrCreateFolder(getOutputFolder());
 
 const doesVersionFolderExists = async (version: string) => {
