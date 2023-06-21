@@ -26,14 +26,12 @@ export const readMessage = (hex: string) => {
 
     const headerLength = input.offset;
 
-    const inputData = Buffer.from(input.buffer.subarray(input.offset));
-    const data = readEntity(
-        new ICustomDataInput(inputData),
-        entity,
-        entityName
+    const inputData = new ICustomDataInput(
+        Buffer.from(input.buffer.subarray(input.offset))
     );
+    const data = readEntity(inputData, entity, entityName);
 
-    return { entity: data, usedBytes: inputData.byteLength + headerLength };
+    return { entity: data, usedBytes: inputData.offset + headerLength };
 };
 
 const readEntity = (

@@ -67,6 +67,16 @@ describe("datafus-parser", () => {
         );
     });
 
+    it("should parse a packet with extra data at the end", async () => {
+        await initDatafusParser();
+        const hex =
+            "58c12604b79a01000000000000010100000032000a4a75616e2d426f6d6261427889362ce5400000009999";
+        const { entity, usedBytes } = readMessage(hex);
+
+        expect(entity._name).toBe("RecruitmentInformationMessage");
+        expect(usedBytes).toBe(hex.length / 2 - 2);
+    });
+
     afterAll(async () => {
         try {
             await fs.rm(outputFolder, { recursive: true, force: true });
