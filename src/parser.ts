@@ -25,16 +25,27 @@ export const readMessage = async (hex: string) => {
     readMessageLength(input, lengthByteSize);
 
     const inputData = Buffer.from(input.buffer.subarray(input.offset));
-    const data = readEntity(new ICustomDataInput(inputData), entity);
+    const data = readEntity(
+        new ICustomDataInput(inputData),
+        entity,
+        entityName
+    );
 
     return data;
 };
 
-const readEntity = (input: ICustomDataInput, entity: Entity) => {
+const readEntity = (
+    input: ICustomDataInput,
+    entity: Entity,
+    entityName: string
+) => {
     const { json } = getLastVersionEvents();
     const result: Record<string, any> = {};
     if (entity.superclass && entity.superclass !== "NetworkMessage") {
-        Object.assign(result, readEntity(input, json[entity.superclass]));
+        Object.assign(
+            result,
+            readEntity(input, json[entity.superclass], entity.superclass)
+        );
     }
 
     const { attributes, booleanAttributes } = Object.entries(
@@ -76,7 +87,7 @@ const readEntity = (input: ICustomDataInput, entity: Entity) => {
         result[key] = readSingleAttribute(input, value);
     }
 
-    return result;
+    return { ...result, _name: entityName };
 };
 
 const readSingleAttribute = (input: ICustomDataInput, type: string): any => {
@@ -108,7 +119,7 @@ const readSingleAttribute = (input: ICustomDataInput, type: string): any => {
     }
 
     if (json[type]) {
-        return readEntity(input, json[type]);
+        return readEntity(input, json[type], type);
     }
 
     // @ts-ignore

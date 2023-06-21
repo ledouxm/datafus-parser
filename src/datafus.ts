@@ -67,15 +67,15 @@ export const initDatafusParser = async ({
     );
 
     const version: string = resp.data.tag_name;
-    if (await doesVersionFolderExists(version)) {
-        return version;
+    if (!(await doesVersionFolderExists(version))) {
+        console.log("Found new version", version);
+        const zipUrl = resp.data.assets[0].browser_download_url;
+
+        await downloadDatafusZip({ version, zipUrl });
+        await extractDatafusZip(version);
+        await cleanup(version);
     }
-
-    const zipUrl = resp.data.assets[0].browser_download_url;
-
-    await downloadDatafusZip({ version, zipUrl });
-    await extractDatafusZip(version);
-    await cleanup(version);
+    console.log("Found existing version", version);
 
     await fetchAndStoreLastVersionEvents(version);
 
@@ -91,6 +91,7 @@ const downloadDatafusZip = async ({
 }) => {
     const outputFolder = await getOrCreateOutputFolder();
     const destZipFile = `${outputFolder}/${version}.zip`;
+    console.log("Downloading Datafus.zip to", destZipFile);
 
     const writer = createWriteStream(destZipFile);
 
@@ -113,14 +114,17 @@ const extractDatafusZip = async (version: string) => {
     const srcZipFile = `${outputFolder}/${version}.zip`;
     const destFolder = `${outputFolder}/${version}`;
 
-    await getOrCreateFolder(destFolder);
+    console.log("Extracting Datafus.zip to", destFolder);
 
+    await getOrCreateFolder(destFolder);
     await decompress(srcZipFile, destFolder);
 };
 
 const cleanup = async (version: string) => {
     const folder = await getOrCreateOutputFolder();
     const versionFolder = await fs.readdir(folder);
+
+    console.log("Cleaning up", versionFolder);
 
     await Promise.all(
         versionFolder.map(async (file) => {
@@ -138,6 +142,7 @@ const cleanup = async (version: string) => {
 
 export const getOutputFolder = () =>
     path.join(process.cwd(), "node_modules", "datafus-parser", "output");
+
 const getOrCreateOutputFolder = () => getOrCreateFolder(getOutputFolder());
 
 const doesVersionFolderExists = async (version: string) => {
