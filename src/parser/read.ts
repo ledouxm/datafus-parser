@@ -24,6 +24,8 @@ export const readMessage = (hex: string) => {
 
     readMessageLength(input, lengthByteSize);
 
+    const headerLength = input.offset;
+
     const inputData = Buffer.from(input.buffer.subarray(input.offset));
     const data = readEntity(
         new ICustomDataInput(inputData),
@@ -31,7 +33,7 @@ export const readMessage = (hex: string) => {
         entityName
     );
 
-    return { entity: data, usedBytes: inputData.byteLength };
+    return { entity: data, usedBytes: inputData.byteLength + headerLength };
 };
 
 const readEntity = (
