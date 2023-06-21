@@ -80,7 +80,6 @@ const readEntity = (
 };
 
 export const getEntityAttributes = (entity: Entity) => {
-    console.log(entity);
     return Object.entries(entity.attributes || {}).reduce(
         (acc, [key, value]) => {
             if (value === "Boolean") acc.booleanAttributes.push(key);
