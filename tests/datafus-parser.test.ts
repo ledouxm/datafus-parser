@@ -32,11 +32,10 @@ describe("datafus-parser", () => {
 
     it("should parse a packet", async () => {
         await initDatafusParser();
-        const result = readMessage(
+        const { entity } = readMessage(
             "58c12604b79a01000000000000010100000032000a4a75616e2d426f6d6261427889362ce540000000"
         );
-        console.log(result);
-        expect(result._name).toBe("RecruitmentInformationMessage");
+        expect(entity._name).toBe("RecruitmentInformationMessage");
     });
 
     it("should write a packet", async () => {

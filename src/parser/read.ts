@@ -31,7 +31,7 @@ export const readMessage = (hex: string) => {
         entityName
     );
 
-    return data;
+    return { entity: data, usedBytes: input.offset };
 };
 
 const readEntity = (
