@@ -3,6 +3,7 @@ import { promises as fs, createWriteStream } from "fs";
 import decompress from "decompress";
 import { getOrCreateFolder } from "./utils";
 import path from "path";
+import { pick } from "pastable";
 
 const ref = {
     json: null as any,
@@ -30,7 +31,7 @@ export const getLastVersionEvents = () => {
     throw new Error("You must call initDatafusParser() first");
 };
 
-export const fetchAndStoreLastVersionEvents = async (version?: string) => {
+export const readAndStoreEvents = async (version?: string) => {
     if (ref.json && ref.properties) return ref;
 
     if (!version) version = await initDatafusParser();
@@ -62,24 +63,46 @@ export const initDatafusParser = async ({
     owner?: string;
     repo?: string;
 } = {}) => {
+    const release = await getLatestRelease({ owner, repo });
+
+    if (!(await doesVersionFolderExists(release.version))) {
+        console.log("Found new version", release.version);
+
+        await downloadAndExtractDatafusZip(release);
+    } else console.log("Found existing version", release.version);
+
+    await readAndStoreEvents(release.version);
+
+    return release.version;
+};
+
+export const getLatestRelease = async ({
+    owner,
+    repo,
+}: {
+    owner: string;
+    repo: string;
+}): Promise<{ version: string; zipUrl: string }> => {
     const resp = await axios.get(
         `https://api.github.com/repos/${owner}/${repo}/releases/latest`
     );
 
-    const version: string = resp.data.tag_name;
-    if (!(await doesVersionFolderExists(version))) {
-        console.log("Found new version", version);
-        const zipUrl = resp.data.assets[0].browser_download_url;
+    return {
+        version: resp.data.tag_name,
+        zipUrl: resp.data.assets[0].browser_download_url,
+    };
+};
 
-        await downloadDatafusZip({ version, zipUrl });
-        await extractDatafusZip(version);
-        await cleanup(version);
-    }
-    console.log("Found existing version", version);
-
-    await fetchAndStoreLastVersionEvents(version);
-
-    return version;
+export const downloadAndExtractDatafusZip = async ({
+    zipUrl,
+    version,
+}: {
+    zipUrl: string;
+    version: string;
+}) => {
+    await downloadDatafusZip({ version, zipUrl });
+    await extractDatafusZip(version);
+    await cleanup(version);
 };
 
 const downloadDatafusZip = async ({
@@ -90,7 +113,7 @@ const downloadDatafusZip = async ({
     zipUrl: string;
 }) => {
     const outputFolder = await getOrCreateOutputFolder();
-    const destZipFile = `${outputFolder}/${version}.zip`;
+    const destZipFile = path.join(outputFolder, version + ".zip");
     console.log("Downloading Datafus.zip to", destZipFile);
 
     const writer = createWriteStream(destZipFile);
@@ -111,8 +134,8 @@ const downloadDatafusZip = async ({
 
 const extractDatafusZip = async (version: string) => {
     const outputFolder = await getOrCreateOutputFolder();
-    const srcZipFile = `${outputFolder}/${version}.zip`;
-    const destFolder = `${outputFolder}/${version}`;
+    const srcZipFile = path.join(outputFolder, version + ".zip");
+    const destFolder = path.join(outputFolder, version);
 
     console.log("Extracting Datafus.zip to", destFolder);
 
@@ -141,7 +164,9 @@ const cleanup = async (version: string) => {
 };
 
 export const getOutputFolder = () =>
-    path.join(process.cwd(), "node_modules", "datafus-parser", "output");
+    isTest()
+        ? path.join(process.cwd(), "output")
+        : path.join(process.cwd(), "node_modules", "datafus-parser", "output");
 
 const getOrCreateOutputFolder = () => getOrCreateFolder(getOutputFolder());
 
@@ -151,3 +176,5 @@ const doesVersionFolderExists = async (version: string) => {
 
     return versionFolder.includes(version);
 };
+
+export const isTest = () => process.env.NODE_ENV === "test";

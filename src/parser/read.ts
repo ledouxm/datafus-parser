@@ -1,9 +1,9 @@
-import { Entity, getLastVersionEvents } from "./datafus";
-import { ICustomDataInput } from "./buffer/DataRW";
-import { BooleanByteWrapper } from "./buffer/BooleanByteWrapper";
+import { Entity, getLastVersionEvents } from "../datafus";
+import { ICustomDataInput } from "../buffer/DataRW";
+import { BooleanByteWrapper } from "../buffer/BooleanByteWrapper";
 import { chunk } from "pastable";
 
-export const readMessage = async (hex: string) => {
+export const readMessage = (hex: string) => {
     const { json, properties } = getLastVersionEvents();
 
     const input = new ICustomDataInput(Buffer.from(hex, "hex"));
@@ -48,24 +48,11 @@ const readEntity = (
         );
     }
 
-    const { attributes, booleanAttributes } = Object.entries(
-        entity.attributes
-    ).reduce(
-        (acc, [key, value]) => {
-            if (value === "Boolean") acc.booleanAttributes.push(key);
-            else acc.attributes[key] = value;
-
-            return acc;
-        },
-        {
-            attributes: {} as Record<string, string>,
-            booleanAttributes: [] as string[],
-        }
-    );
+    const { attributes, booleanAttributes } = getEntityAttributes(entity);
 
     const hasMultipleBooleanAttributes = booleanAttributes.length > 1;
 
-    if (hasMultipleBooleanAttributes && booleanAttributes.length) {
+    if (hasMultipleBooleanAttributes) {
         const chunks = chunk(booleanAttributes, 8);
 
         for (const chunk of chunks) {
@@ -81,13 +68,31 @@ const readEntity = (
         }
     }
 
-    for (const [key, value] of Object.entries(
-        hasMultipleBooleanAttributes ? attributes : entity.attributes
-    )) {
+    const remainingAttributes = hasMultipleBooleanAttributes
+        ? attributes
+        : entity.attributes;
+
+    for (const [key, value] of Object.entries(remainingAttributes)) {
         result[key] = readSingleAttribute(input, value);
     }
 
     return { ...result, _name: entityName };
+};
+
+export const getEntityAttributes = (entity: Entity) => {
+    console.log(entity);
+    return Object.entries(entity.attributes || {}).reduce(
+        (acc, [key, value]) => {
+            if (value === "Boolean") acc.booleanAttributes.push(key);
+            else acc.attributes[key] = value;
+
+            return acc;
+        },
+        {
+            attributes: {} as Record<string, string>,
+            booleanAttributes: [] as string[],
+        }
+    );
 };
 
 const readSingleAttribute = (input: ICustomDataInput, type: string): any => {

@@ -173,6 +173,9 @@ export class ICustomDataOutput {
         this.offset += 2;
         return result;
     }
+    writeString(str: string) {
+        return writeUtf(this, str);
+    }
     writeFloat(num: number) {
         const result = this.buffer.writeFloatBE(num, this.offset);
         this.offset += 4;
