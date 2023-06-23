@@ -3,7 +3,7 @@ import { promises as fs, createWriteStream } from "fs";
 import decompress from "decompress";
 import { getOrCreateFolder } from "./utils";
 import path from "path";
-import { pick } from "pastable";
+import os from "os";
 
 const ref = {
     json: null as any,
@@ -163,10 +163,52 @@ const cleanup = async (version: string) => {
     );
 };
 
+export const getAppDataPath = () => {
+    const platform = os.platform();
+    const callback = callbacks[platform as keyof typeof callbacks];
+
+    if (!callback) {
+        return;
+    }
+
+    return callback();
+};
+
+// Exemple d'utilisation
+const callbacks = {
+    win32: () => {
+        const appDataPath = process.env.APPDATA || "";
+        console.log(
+            "Chemin du répertoire de données d'application sur Windows :",
+            appDataPath
+        );
+        return appDataPath;
+    },
+    darwin: () => {
+        const appDataPath = path.join(
+            os.homedir(),
+            "Library",
+            "Application Support"
+        );
+        console.log(
+            "Chemin du répertoire de données d'application sur macOS :",
+            appDataPath
+        );
+        return appDataPath;
+    },
+    linux: () => {
+        const appDataPath = path.join(os.homedir(), ".config");
+        console.log(
+            "Chemin du répertoire de données d'application sur Linux :",
+            appDataPath
+        );
+        return appDataPath;
+    },
+};
 export const getOutputFolder = () =>
     isTest()
         ? path.join(process.cwd(), "output")
-        : path.join(process.cwd(), "node_modules", "datafus-parser", "output");
+        : path.join(getAppDataPath()!, "datafus");
 
 const getOrCreateOutputFolder = () => getOrCreateFolder(getOutputFolder());
 
