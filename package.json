@@ -1,6 +1,6 @@
 {
     "name": "datafus-parser",
-    "version": "0.0.13",
+    "version": "0.0.14",
     "description": "Read, parse and write dfs messages from the game",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
